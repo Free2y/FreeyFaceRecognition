@@ -11,6 +11,7 @@ class FreeyFaceDetection:
     modelFile = "./models/opencv_face_detector_uint8.pb"
     configFile = "./models/opencv_face_detector.pbtxt"
     net = cv2.dnn.readNetFromTensorflow(modelFile, configFile)
+    eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades+'haarcascade_eye.xml')
     conf_threshold = 0.7
 
     # def __init__(self,net,conf_threshold):
@@ -34,8 +35,11 @@ class FreeyFaceDetection:
                 y1 = int(detections[0, 0, i, 4] * frameHeight)
                 x2 = int(detections[0, 0, i, 5] * frameWidth)
                 y2 = int(detections[0, 0, i, 6] * frameHeight)
-                bboxes.append([x1, y1, x2, y2])
-
+                if 0 <= y1 <= frameHeight and 0 <= y2 <= frameHeight and 0 <= x1 <= frameWidth and 0 <= x2 <= frameWidth:
+                    face = frame[y1:y2, x1:x2]
+                    face_gray = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)
+                    eyes = self.eye_cascade.detectMultiScale(face_gray)
+                    bboxes.append([x1, y1, x2, y2, eyes])
         return bboxes
 
     def faceDetectionOnce(self, img):
@@ -46,10 +50,12 @@ class FreeyFaceDetection:
         else:
             for i in bboxes:
                 img = cv2.rectangle(img, (i[0], i[1]), (i[2], i[3]), (171, 207, 49), int(round(frameHeight / 240)), 8)
+                face_img = img[i[1]:i[3], i[0]:i[2]]
+                for (ex, ey, ew, eh) in i[4]:
+                    cv2.rectangle(face_img, (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 2)
         print(bboxes)
         cv2.imshow("Face Detection Comparison", img)
         cv2.waitKey(0)
-
 
 if __name__ == '__main__':
     ffd = FreeyFaceDetection()
