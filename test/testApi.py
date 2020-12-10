@@ -1,4 +1,3 @@
-import json
 
 import cv2
 import requests
@@ -27,9 +26,10 @@ def showFrame(frame,raw_out,type):
         cv2.imshow('frame', frame)
 
 if __name__ == '__main__':
-    type = 0
-    fd_url = 'http://127.0.0.1:5678/api/face_detection'
-    fr_url = 'http://127.0.0.1:5678/api/face_recognition'
+    host = 'http://127.0.0.1'
+    type = 1
+    fd_url = host+':5678/api/face_detection'
+    fr_url = host+':5678/api/face_recognition'
     if type == 0:
         url = fd_url
     elif type == 1:
@@ -37,36 +37,48 @@ if __name__ == '__main__':
     # img_b64 = img_to_base64('./face.jpg')
     # res = requests.post(url=url,data={'imgbase64':img_b64})
     # print(res.text)
-    # result = json.loads(res.json())
-    # raw_data = result['data']
+    # result = res.json()
+    # raw_data = result['result']
     # print(raw_data)
     # raw_out = raw_data['raw_out']
     # if len(raw_out) == 0:
     #     print("没有检查到人脸")
     # else:
     #     print("检查到人脸。。。。")
-    #
-    # frame = cv2.imread('./face.jpg')
-    # showFrame(frame,raw_out,type)
-    # cv2.waitKey(0)
-    video_capture = cv2.VideoCapture(
-        'https://hmfsimg.chci.cn/hmfs/v/dzbbbk/NTE3MzEwNjgwMzE1MTg3Mg==.mp4')
-
-    # 视频
+    # # showFrame(frame,raw_out,type)
+    # # cv2.waitKey(0)
+    video_capture = cv2.VideoCapture('https://ss3.bdstatic.com/70cFv8Sh_Q1YnxGkpoWK1HF6hhy/it/u=232249614,3151086243&fm=26&gp=0.jpg')
     while True:
         flag, frame = video_capture.read()
         if flag:
-            img_b64 = frame_to_base64(frame)
-            res = requests.post(url=url,data={'imgbase64':img_b64})
-            result = json.loads(res.json())
-            raw_data = result['data']
+            res = requests.post(url=url,data={'img_uri':'https://ss3.bdstatic.com/70cFv8Sh_Q1YnxGkpoWK1HF6hhy/it/u=232249614,3151086243&fm=26&gp=0.jpg'})
+            result = res.json()
+            raw_data = result['result']
             raw_out = raw_data['raw_out']
             print(raw_data['speed_time'])
 
             showFrame(frame,raw_out,type)
-            cv2.waitKey(1)
+            cv2.waitKey(0)
         else:
             break
 
+    # video_capture = cv2.VideoCapture(
+    #     'https://example.com/example.mp4')
+    #
+    # # # 视频
+    # while True:
+    #     flag, frame = video_capture.read()
+    #     if flag:
+    #         img_b64 = frame_to_base64(frame)
+    #         res = requests.post(url=url,data={'imgbase64':img_b64})
+    #         result = res.json()
+    #         raw_data = result['result']
+    #         raw_out = raw_data['raw_out']
+    #         print(raw_data['speed_time'])
+    #
+    #         showFrame(frame,raw_out,type)
+    #         cv2.waitKey(1)
+    #     else:
+    #         break
     cv2.destroyAllWindows()
 

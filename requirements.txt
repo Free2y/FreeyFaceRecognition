@@ -1,6 +1,6 @@
 flask
 flask-restful
 gevent
-open-contrib-python
+opencv-contrib-python
 pillow
 
