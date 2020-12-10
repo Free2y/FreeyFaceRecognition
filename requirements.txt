@@ -1,0 +1,6 @@
+flask
+flask-restful
+gevent
+open-contrib-python
+pillow
+
