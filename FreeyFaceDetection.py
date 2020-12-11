@@ -39,7 +39,8 @@ class FreeyFaceDetection:
                     face = frame[y1:y2, x1:x2]
                     face_gray = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)
                     eyes = self.eye_cascade.detectMultiScale(face_gray)
-                    bboxes.append([x1, y1, x2, y2, eyes])
+                    box = (x1, y1, x2, y2)
+                    bboxes.append((box, eyes))
         return bboxes
 
     def faceDetectionOnce(self, img):
@@ -48,11 +49,11 @@ class FreeyFaceDetection:
         if len(bboxes) == 0:
             print('抱歉，未检测到人脸')
         else:
-            for i in bboxes:
-                img = cv2.rectangle(img, (i[0], i[1]), (i[2], i[3]), (171, 207, 49), int(round(frameHeight / 240)), 8)
-                face_img = img[i[1]:i[3], i[0]:i[2]]
-                for (ex, ey, ew, eh) in i[4]:
-                    cv2.rectangle(face_img, (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 2)
+            for box,eyes in bboxes:
+                img = cv2.rectangle(img, (box[0], box[1]), (box[2], box[3]), (171, 207, 49), int(round(frameHeight / 240)), 8)
+                face_img = img[box[1]:box[3], box[0]:box[2]]
+                for (ex, ey, ew, eh) in eyes:
+                    cv2.rectangle(face_img, (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 1)
         print(bboxes)
         cv2.imshow("Face Detection Comparison", img)
         cv2.waitKey(0)

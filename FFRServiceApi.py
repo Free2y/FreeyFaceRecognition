@@ -3,6 +3,7 @@ import json
 import os
 import time
 
+import werkzeug
 from flask import Flask, request
 from flask_restful import Api, reqparse, Resource
 from gevent import pywsgi
@@ -39,11 +40,13 @@ api = Api(app)
 parser = reqparse.RequestParser()
 parser.add_argument('imgbase64')
 parser.add_argument('img_uri')
+parser.add_argument('type',type=int)
+parser.add_argument('imagefiles', type=werkzeug.datastructures.FileStorage, location='files')
 
 def fromatJsonDumps(data):
     return json.dumps(data,cls=NpEncoder,ensure_ascii=False)
 
-class FaceRecognition(Resource):
+class FaceDRecognition(Resource):
     def __init__(self):
         pass
 
@@ -54,37 +57,43 @@ class FaceRecognition(Resource):
         args = parser.parse_args()
         imgbase64 = args['imgbase64']
         img_uri = args['img_uri']
-        type = 1
+        type = args['type']
+        if type is None:
+            type = 0
+        files = request.files.getlist('imagefiles')
+
         # 限制接口使用次数
         time_now = time.strftime("%Y-%m-%d-%H_%M_%S",time.localtime(time.time()))
-        # time_day = time.strftime("%Y-%m-%d", time.localtime(time.time()))
-        # if time_day != now_time:
-        #     now_time = time_day
-        #     request_time = {}
-        # remote_ip_now = request.remote_addr
-        # print(remote_ip_now)
-        # if remote_ip_now not in request_time :
-        #     request_time[remote_ip_now] = 1
-        # elif request_time[remote_ip_now] > max_post_time -1 and remote_ip_now not in white_ips:
-        #     return {'code': 999, 'msg': '已经超出免费使用次数'}
-        # else:
-        #     request_time[remote_ip_now] += 1
+        time_day = time.strftime("%Y-%m-%d", time.localtime(time.time()))
+        if time_day != now_time:
+            now_time = time_day
+            request_time = {}
+        remote_ip_now = request.remote_addr
+        print(remote_ip_now)
+        if remote_ip_now not in request_time :
+            request_time[remote_ip_now] = 1
+        elif request_time[remote_ip_now] > max_post_time -1 and remote_ip_now not in white_ips:
+            return {'code': 999, 'msg': '已经超出免费使用次数'}
+        else:
+            request_time[remote_ip_now] += 1
 
-        if img_uri is not None or imgbase64 is not None:
+        if img_uri is not None or imgbase64 is not None or len(files) != 0:
             try:
-                if img_uri is None:
-                    results = ffrService.getFaceDRResultsByBase64(imgbase64, type)
+                if len(files) != 0:
+                    faces = ffrService.getFaceDRResultsByFiles(files, 0)
+                elif img_uri is None:
+                    faces = ffrService.getFaceDRResultsByBase64(imgbase64, type)
                 else:
-                    results = ffrService.getFaceDRResultsByUri(img_uri, type)
+                    faces = ffrService.getFaceDRResultsByUri(img_uri, type)
                 #print(results)
                 log_info = {
                     'ip': request.remote_addr,
-                    'return': results,
+                    'return': faces,
                     'time': time_now
                 }
                 logger.info(fromatJsonDumps(log_info))
                 return {'code': 0, 'message': '成功',
-                     'result': {'raw_out': results,
+                     'result': {'faces': faces,
                               'speed_time': round(time.time() - start_time, 2)}}
             except Exception as ex:
                 error_log = {'code': -1, 'message': '产生了一点错误，请检查日志', 'result': str(ex)}
@@ -92,62 +101,9 @@ class FaceRecognition(Resource):
                 return error_log
         else:
             return {'code': -1, 'message': '没有传入参数'}
-
-
-class FaceDetection(Resource):
-    def __init__(self):
-        pass
-
-    def post(self):
-        start_time = time.time()
-        global now_time
-        global request_time
-        args = parser.parse_args()
-        imgbase64 = args['imgbase64']
-        img_uri = args['img_uri']
-        type = 0
-        # 限制接口使用次数
-        time_now = time.strftime("%Y-%m-%d-%H_%M_%S",time.localtime(time.time()))
-        # time_day = time.strftime("%Y-%m-%d", time.localtime(time.time()))
-        # if time_day != now_time:
-        #     now_time = time_day
-        #     request_time = {}
-        # remote_ip_now = request.remote_addr
-        # print(remote_ip_now)
-        # if remote_ip_now not in request_time :
-        #     request_time[remote_ip_now] = 1
-        # elif request_time[remote_ip_now] > max_post_time -1 and remote_ip_now not in white_ips:
-        #     return {'code': 999, 'msg': '已经超出免费使用次数'}
-        # else:
-        #     request_time[remote_ip_now] += 1
-
-        if img_uri is not None or imgbase64 is not None:
-            try:
-                if img_uri is None:
-                    results = ffrService.getFaceDRResultsByBase64(imgbase64, type)
-                else:
-                    results = ffrService.getFaceDRResultsByUri(img_uri, type)
-                #print(results)
-                log_info = {
-                    'ip': request.remote_addr,
-                    'return': results,
-                    'time': time_now
-                }
-                logger.info(fromatJsonDumps(log_info))
-                return {'code': 0, 'message': '成功',
-                     'result': {'raw_out': results,
-                              'speed_time': round(time.time() - start_time, 2)}}
-            except Exception as ex:
-                error_log = {'code': -1, 'message': '产生了一点错误，请检查日志', 'result': str(ex)}
-                logger.error(error_log, exc_info=True)
-                return error_log
-        else:
-            return {'code': -1, 'message': '没有传入参数'}
-
 
 # 设置路由
-api.add_resource(FaceRecognition, '/api/face_recognition')
-api.add_resource(FaceDetection, '/api/face_detection')
+api.add_resource(FaceDRecognition, '/api/fdrService/faceDRecognition')
 
 if __name__ == '__main__':
     print('正在启动服务......')

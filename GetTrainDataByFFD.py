@@ -21,15 +21,11 @@ class GetAndSaveFace:
         if len(bboxes) == 0:
             print('抱歉，未检测到人脸')
         else:
-            for i in bboxes:
-                if 0 <= i[1] <= imgHeight and 0 <= i[3] <= imgHeight and 0 <= i[0] <= imgWidth and 0 <= i[
-                    2] <= imgWidth:
-                    saveimg = img[i[1]:i[3], i[0]:i[2]]
-                    # cv2.imshow("Face Detection Comparison", saveimg)
-                    # cv2.waitKey(0)
-                    cv2.imwrite(os.path.join(file_path, filename), saveimg)
-                else:
-                    print('识别超出监测图片范围')
+            for box,eyes in bboxes:
+                saveimg = img[box[1]:box[3], box[0]:box[2]]
+                # cv2.imshow("Face Detection Comparison", saveimg)
+                # cv2.waitKey(0)
+                cv2.imwrite(os.path.join(file_path, filename), saveimg)
 
     def loadOriginImgs(self):
         dirs = os.listdir(self.inpath)
